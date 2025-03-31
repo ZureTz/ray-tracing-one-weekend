@@ -161,5 +161,10 @@ Temporary Items
 # iCloud generated files
 *.icloud
 
+### xmake ###
+# Xmake cache
+.xmake/
+build/
+
 # End of https://www.toptal.com/developers/gitignore/api/c,c++,linux,macos
 ︽
