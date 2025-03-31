@@ -166,5 +166,11 @@ Temporary Items
 .xmake/
 build/
 
+### Clangd cache ###
+.cache/
+
+### output pics ###
+output/
+
 # End of https://www.toptal.com/developers/gitignore/api/c,c++,linux,macos
 ︽
