@@ -1,7 +1,8 @@
-set_toolchains("gcc")
+-- Generate compile_commands.json for clangd every time the project is built
 add_rules("plugin.compile_commands.autoupdate", {lsp = "clangd"})
-
--- add_requires("pacman::glib2", {alias = "glib2"})
+-- Set c++ code standard: c++17
+set_languages("c++17")
+add_requires("pacman::tomlplusplus", {alias = "tomlplusplus"})
 
 target("generate-ppm-image-multithread")
   set_kind("binary")
@@ -10,4 +11,4 @@ target("generate-ppm-image-multithread")
 target("ray-tracing-demo-cpu")
   set_kind("binary")
   add_files("src/ray-tracing-demo-cpu/*.cc")
-  -- add_packages("glib2")
+  add_packages("tomlplusplus")

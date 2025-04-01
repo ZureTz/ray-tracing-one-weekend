@@ -1,9 +1,14 @@
 #include <algorithm>
 #include <iostream>
 
+#include <toml++/toml.hpp>
+
 #include "utils/color.h"
 #include "utils/ray.h"
 #include "utils/vec3.h"
+
+// Load config.toml using toml++ library
+const toml::table config = toml::parse_file("config.toml");
 
 // Determine if the ray hits the sphere
 double hit_sphere(const point3 &center, const double radius, const ray &r) {
@@ -34,8 +39,8 @@ double hit_sphere(const point3 &center, const double radius, const ray &r) {
 // Default ray color to 0,0,0
 color ray_color(const ray &r) {
   // If hits sphere draw color map
-  const auto center = point3(0.5, 0.2, -1.2);
-  const auto radius = 0.5;
+  const auto center = point3(*config["Sphere"]["center"].as_array());
+  const auto radius = config["Sphere"]["radius"].as_floating_point()->get();
 
   // Check if the ray hits the sphere
   const auto solved_t = hit_sphere(center, radius, r);
@@ -55,30 +60,41 @@ color ray_color(const ray &r) {
   const auto blend_ratio = 0.5 * (unit_direction.y() - (-1.0));
 
   // Blue-to-white gradient
-  const auto white = color(1.0, 1.0, 1.0);
-  const auto blue = color(0.5, 0.7, 1.0);
+  const auto white = color(*config["Color"]["white"].as_array());
+  const auto blue = color(*config["Color"]["blue"].as_array());
   return (1 - blend_ratio) * white + blend_ratio * blue;
 }
 
 int main() {
+  // Print config.toml using toml++ library
+  std::clog << config << "\n\n";
 
   // Image
 
-  const auto aspect_ratio = 16.0 / 9.0;
-  const int image_width = 720;
+  const auto aspect_ratio_width =
+      config["Image"]["aspect_ratio_width"].as_floating_point()->get();
+  const auto aspect_ratio_height =
+      config["Image"]["aspect_ratio_height"].as_floating_point()->get();
+  const auto aspect_ratio = aspect_ratio_width / aspect_ratio_height;
+
+  const int image_width = config["Image"]["image_width"].as_integer()->get();
   // Ensure that image_height is at least 1 to avoid division by zero
   const int image_height = std::max(int(image_width / aspect_ratio), 1);
 
   // Camera
 
   // Focal length is the distance from the camera to the viewport
-  const auto focal_length = 1.0;
-  const auto viewport_height = 2.0;
+  const auto focal_length =
+      config["Camera"]["focal_length"].as_floating_point()->get();
+  const auto viewport_height =
+      config["Camera"]["viewport_height"].as_floating_point()->get();
+
   // Use image width / image height instead of aspect_ratio to match the image
   // Aspect ratio does not always match the viewport aspect ratio
   const auto viewport_width =
       viewport_height * double(image_width) / double(image_height);
-  const auto camera_center = point3(0, 0, 0);
+  const auto camera_center =
+      point3(*config["Camera"]["camera_center"].as_array());
 
   // Calculate the vectors across the horizontal and down the vertical viewport
   // edges.

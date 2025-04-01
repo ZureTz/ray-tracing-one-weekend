@@ -4,6 +4,8 @@
 #include <cmath>
 #include <ostream>
 
+#include <toml++/toml.hpp>
+
 class vec3 {
   // A array with fixed length 3
   std::array<double, 3> e;
@@ -12,6 +14,14 @@ public:
   // Initializers
   vec3() : e{0, 0, 0} {}
   vec3(double e0, double e1, double e2) : e{e0, e1, e2} {}
+  vec3(const toml::array &arr) {
+    if (arr.size() != 3) {
+      throw std::runtime_error("vec3 constructor requires a toml::array of size 3");
+    }
+    e[0] = arr[0].as_floating_point()->get();
+    e[1] = arr[1].as_floating_point()->get();
+    e[2] = arr[2].as_floating_point()->get();
+  }
 
   // Get
   double x() const { return e[0]; }
