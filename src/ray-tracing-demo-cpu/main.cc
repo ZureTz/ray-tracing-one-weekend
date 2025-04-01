@@ -5,8 +5,50 @@
 #include "utils/ray.h"
 #include "utils/vec3.h"
 
+// Determine if the ray hits the sphere
+double hit_sphere(const point3 &center, const double radius, const ray &r) {
+  // t^2⋅d⋅d−2t⋅d⋅(C−Q)+(C−Q)⋅(C−Q)−r^2=0
+  // a = d⋅d
+  // b = -2⋅d⋅(C−Q); h = d⋅(C−Q)
+  // c = (C−Q)⋅(C−Q)−r^2
+
+  const auto d = r.direction();
+  const auto C_Q = center - r.origin();
+
+  const auto a = d.length_squared();
+  const auto h = dot(d, C_Q);
+  const auto c = C_Q.length_squared() - radius * radius;
+
+  // Determine if it has root: b^2 - 4ac >= 0
+  const auto discriminant = h * h - a * c;
+
+  // If not hit
+  if (discriminant < 0) {
+    return -1.0;
+  }
+
+  // If hit, return the nearest root
+  return (h - std::sqrt(discriminant)) / a;
+}
+
 // Default ray color to 0,0,0
 color ray_color(const ray &r) {
+  // If hits sphere draw color map
+  const auto center = point3(0.5, 0.2, -1.2);
+  const auto radius = 0.5;
+
+  // Check if the ray hits the sphere
+  const auto solved_t = hit_sphere(center, radius, r);
+  if (solved_t > 0) {
+    const vec3 normal = unit_vector(r.at(solved_t) - center);
+    // Convert each component of the normal vector to a color
+    // Note: The color is in the range [0, 1] and components are in the range of
+    // [-1, 1], which is why we add 1 and divide by 2
+    return 0.5 * color(normal.x() + 1, normal.y() + 1, normal.z() + 1);
+  }
+
+  // Otherwise, draw a gradient from blue to white
+
   // Convert direction of ray to unit vector
   const vec3 unit_direction = unit_vector(r.direction());
   // Convert from range [-1, 1] to [0, 1] then calculate the color ratio
@@ -23,7 +65,7 @@ int main() {
   // Image
 
   const auto aspect_ratio = 16.0 / 9.0;
-  const int image_width = 1920;
+  const int image_width = 720;
   // Ensure that image_height is at least 1 to avoid division by zero
   const int image_height = std::max(int(image_width / aspect_ratio), 1);
 
