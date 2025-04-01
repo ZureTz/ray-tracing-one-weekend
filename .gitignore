@@ -172,5 +172,8 @@ build/
 ### output pics ###
 output/
 
+### config ###
+config.toml
+
 # End of https://www.toptal.com/developers/gitignore/api/c,c++,linux,macos
 ︽
