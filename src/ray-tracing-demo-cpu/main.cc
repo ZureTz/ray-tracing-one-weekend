@@ -4,52 +4,30 @@
 #include <toml++/toml.hpp>
 
 #include "utils/color.h"
+#include "utils/hittable.h"
 #include "utils/ray.h"
+#include "utils/sphere.h"
 #include "utils/vec3.h"
 
 // Load config.toml using toml++ library
 const toml::table config = toml::parse_file("config.toml");
 
-// Determine if the ray hits the sphere
-double hit_sphere(const point3 &center, const double radius, const ray &r) {
-  // t^2⋅d⋅d−2t⋅d⋅(C−Q)+(C−Q)⋅(C−Q)−r^2=0
-  // a = d⋅d
-  // b = -2⋅d⋅(C−Q); h = d⋅(C−Q)
-  // c = (C−Q)⋅(C−Q)−r^2
-
-  const auto d = r.direction();
-  const auto C_Q = center - r.origin();
-
-  const auto a = d.length_squared();
-  const auto h = dot(d, C_Q);
-  const auto c = C_Q.length_squared() - radius * radius;
-
-  // Determine if it has root: b^2 - 4ac >= 0
-  const auto discriminant = h * h - a * c;
-
-  // If not hit
-  if (discriminant < 0) {
-    return -1.0;
-  }
-
-  // If hit, return the nearest root
-  return (h - std::sqrt(discriminant)) / a;
-}
+// Colors
+const auto white = color(*config["Color"]["white"].as_array());
+const auto blue = color(*config["Color"]["blue"].as_array());
 
 // Default ray color to 0,0,0
-color ray_color(const ray &r) {
-  // If hits sphere draw color map
-  const auto center = point3(*config["Sphere"]["center"].as_array());
-  const auto radius = config["Sphere"]["radius"].as_floating_point()->get();
+color ray_color(const ray &r, const hittable &h) {
+  // If hits draw color map
 
   // Check if the ray hits the sphere
-  const auto solved_t = hit_sphere(center, radius, r);
-  if (solved_t > 0) {
-    const vec3 normal = unit_vector(r.at(solved_t) - center);
+  hit_record record;
+  if (h.hit(r, 0.0, std::numeric_limits<double>::max(), record)) {
     // Convert each component of the normal vector to a color
     // Note: The color is in the range [0, 1] and components are in the range of
     // [-1, 1], which is why we add 1 and divide by 2
-    return 0.5 * color(normal.x() + 1, normal.y() + 1, normal.z() + 1);
+    return 0.5 * color(record.normal.x() + 1, record.normal.y() + 1,
+                       record.normal.z() + 1);
   }
 
   // Otherwise, draw a gradient from blue to white
@@ -60,8 +38,6 @@ color ray_color(const ray &r) {
   const auto blend_ratio = 0.5 * (unit_direction.y() - (-1.0));
 
   // Blue-to-white gradient
-  const auto white = color(*config["Color"]["white"].as_array());
-  const auto blue = color(*config["Color"]["blue"].as_array());
   return (1 - blend_ratio) * white + blend_ratio * blue;
 }
 
@@ -110,6 +86,13 @@ int main() {
                                    (viewport_u / 2) - (viewport_v / 2);
   const auto pixel00_location = viewport_upper_left + 0.5 * (pixel_u + pixel_v);
 
+  // Objects
+
+  // Create a sphere object
+  const auto center = point3(*config["Sphere"]["center"].as_array());
+  const auto radius = config["Sphere"]["radius"].as_floating_point()->get();
+  const sphere s(center, radius);
+
   // Render
 
   std::cout << "P3\n" << image_width << ' ' << image_height << "\n255\n";
@@ -126,8 +109,8 @@ int main() {
       // Create a ray from the camera to the pixel
       const auto r = ray(camera_center, ray_direction);
 
-      // A dummy color for test
-      const auto pixel_color = ray_color(r);
+      // Find out color
+      const auto pixel_color = ray_color(r, s);
       // Note: Write the translated [0,255] value of each color component
       write_color(std::cout, pixel_color);
     }
