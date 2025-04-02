@@ -1,4 +1,4 @@
-#include "../utils/sphere.h"
+#include "../../hittables/sphere.h"
 
 sphere::sphere(const point3 &center, const double radius)
     : center(center), radius(std::max(0.0, radius)) {}

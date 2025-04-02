@@ -4,10 +4,10 @@
 
 #include <toml++/toml.hpp>
 
+#include "hittables/hittable.h"
+#include "hittables/sphere.h"
 #include "utils/color.h"
-#include "utils/hittable.h"
 #include "utils/ray.h"
-#include "utils/sphere.h"
 #include "utils/vec3.h"
 
 // Load config.toml using toml++ library

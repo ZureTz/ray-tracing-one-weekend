@@ -1,4 +1,4 @@
-#include "../utils/vec3.h"
+#include "../../utils/vec3.h"
 
 // Initializers
 vec3::vec3() : e{0, 0, 0} {}
