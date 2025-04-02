@@ -9,14 +9,13 @@ private:
 
 public:
   // Constructors
-  ray() {}
-  ray(const point3 &origin, const vec3 &direction)
-      : orig(origin), dir(direction) {}
+  ray();
+  ray(const point3 &origin, const vec3 &direction);
 
   // Gets
-  const point3 &origin() const { return orig; }
-  const vec3 &direction() const { return dir; }
+  const point3 &origin() const;
+  const vec3 &direction() const;
 
   // At
-  point3 at(double t) const { return orig + t * dir; }
+  point3 at(double t) const;
 };
