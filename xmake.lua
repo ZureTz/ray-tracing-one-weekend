@@ -2,7 +2,7 @@
 add_rules("plugin.compile_commands.autoupdate", {lsp = "clangd"})
 -- Set c++ code standard: c++17
 set_languages("c++17")
-add_requires("pacman::tomlplusplus", {alias = "tomlplusplus"})
+add_requires("toml++", {alias = "tomlplusplus"})
 
 target("generate-ppm-image-multithread")
   set_kind("binary")
