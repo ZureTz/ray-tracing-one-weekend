@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <fstream>
 #include <iostream>
 
 #include <toml++/toml.hpp>
@@ -94,8 +95,10 @@ int main() {
   const sphere s(center, radius);
 
   // Render
+  // Open output file
+  std::ofstream output_file("output/output.ppm");
 
-  std::cout << "P3\n" << image_width << ' ' << image_height << "\n255\n";
+  output_file << "P3\n" << image_width << ' ' << image_height << "\n255\n";
 
   for (int j = 0; j < image_height; j++) {
     std::clog << "\rScanlines remaining: " << (image_height - j) << ' '
@@ -112,7 +115,7 @@ int main() {
       // Find out color
       const auto pixel_color = ray_color(r, s);
       // Note: Write the translated [0,255] value of each color component
-      write_color(std::cout, pixel_color);
+      write_color(output_file, pixel_color);
     }
   }
 
