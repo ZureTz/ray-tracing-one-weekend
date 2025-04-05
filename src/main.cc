@@ -53,29 +53,30 @@ int main(int argc, char const *argv[]) {
       .append();
   // Check if the user provided a workdir
   try {
-    program.parse_args(
-        argc, argv); // Example: ./main --color red --color green --color blue
+    // Example: ./ray-tracing-demo-cpu --working-directory=/path/to/dir
+    program.parse_args(argc, argv);
   } catch (const std::exception &err) {
     std::cerr << err.what() << std::endl;
     std::cerr << program;
-    std::exit(1);
+    return 1;
   }
 
   // Get the workdir and print it
   const auto workdir = program.get<std::string>("--working-directory");
-  std::clog << "Working directory: " << workdir << "\n";
+  std::clog << "Working directory: " << workdir << "\n\n";
 
   // Load config.toml using toml++ library
   toml::table config;
   try {
     config = toml::parse_file(workdir + "/config.toml");
   } catch (std::exception e) {
-    std::cerr << "Error loading config.toml: " << workdir + "/config.toml"<< "\n";
-    std::cerr << e.what() << "\n";
+    std::cerr << "Error loading config.toml: " << workdir + "/config.toml"
+              << "\n";
+    return 1;
   }
 
   // Print config.toml using toml++ library
-  std::clog << config << "\n\n";
+  std::clog << "Config file content:\n\n" << config << "\n\n";
 
   // Image
 
