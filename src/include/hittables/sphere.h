@@ -11,7 +11,6 @@ public:
   sphere(const point3 &center, const double radius);
 
   // Determine if the ray hits the sphere
-  bool hit(const ray &r, double t_min, double t_max,
-           hit_record &record) const override;
+  bool hit(const ray &r, interval ray_t, hit_record &record) const override;
   ~sphere() override = default;
 };

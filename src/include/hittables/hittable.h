@@ -1,6 +1,7 @@
 #pragma once
 // Hittable objects are objects that can be hit by rays
 
+#include "../utils/interval.h"
 #include "../utils/ray.h"
 #include "../utils/vec3.h"
 
@@ -19,7 +20,6 @@ struct hit_record {
 
 class hittable {
 public:
-  virtual bool hit(const ray &r, double t_min, double t_max,
-                   hit_record &record) const = 0;
+  virtual bool hit(const ray &r, interval ray_t, hit_record &record) const = 0;
   virtual ~hittable() = default;
 };

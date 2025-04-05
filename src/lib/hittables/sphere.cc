@@ -4,8 +4,7 @@ sphere::sphere(const point3 &center, const double radius)
     : center(center), radius(std::max(0.0, radius)) {}
 
 // Determine if the ray hits the sphere
-bool sphere::hit(const ray &r, double t_min, double t_max,
-                 hit_record &record) const {
+bool sphere::hit(const ray &r, interval ray_t, hit_record &record) const {
   // t^2⋅d⋅d−2t⋅d⋅(C−Q)+(C−Q)⋅(C−Q)−r^2=0
   // a = d⋅d
   // b = -2⋅d⋅(C−Q); h = d⋅(C−Q)
@@ -27,21 +26,15 @@ bool sphere::hit(const ray &r, double t_min, double t_max,
   }
 
   // If hit, first calculate root and check if it's in range
-  
-  // lambda to define in_range (not inclusive)
-  const auto in_range = [=](double t) -> bool {
-    return t > t_min && t < t_max;
-  };
-
   const auto sqrt_discriminant = sqrt(discriminant);
   // nearer root
   auto root = (h - sqrt_discriminant) / a;
   // Check if at least one root is in range
-  if (!in_range(root)) {
+  if (!ray_t.surrounds(root)) {
     // If one root missed, change root to another
     root = (h + sqrt_discriminant) / a;
     // Check another root
-    if (!in_range(root)) {
+    if (!ray_t.surrounds(root)) {
       return false;
     }
     // Otherwise we have a hit

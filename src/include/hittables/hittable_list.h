@@ -19,6 +19,5 @@ public:
   // Add an object to the list
   void add(std::shared_ptr<hittable> object);
 
-  bool hit(const ray &r, double t_min, double t_max,
-                   hit_record &record) const override;
+  bool hit(const ray &r, interval ray_t, hit_record &record) const override;
 };

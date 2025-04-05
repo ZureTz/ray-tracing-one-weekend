@@ -1,7 +1,7 @@
 #include <algorithm>
 #include <exception>
-#include <fstream>
 #include <iostream>
+#include <memory>
 #include <string>
 #include <unordered_map>
 
@@ -12,6 +12,7 @@
 #include "include/hittables/hittable_list.h"
 #include "include/hittables/sphere.h"
 #include "include/utils/color.h"
+#include "include/utils/interval.h"
 #include "include/utils/ray.h"
 #include "include/utils/rtweekend.h"
 #include "include/utils/vec3.h"
@@ -23,7 +24,7 @@ color ray_color(
 
   // Check if the ray hits the sphere
   hit_record record;
-  if (world.hit(r, 1.0, infinity, record)) {
+  if (world.hit(r, interval(0.0, infinity), record)) {
     // Convert each component of the normal vector to a color
     // Note: The color is in the range [0, 1] and components are in the range of
     // [-1, 1], which is why we add 1 and divide by 2
@@ -69,9 +70,10 @@ int main(int argc, char const *argv[]) {
   toml::table config;
   try {
     config = toml::parse_file(workdir + "/config.toml");
-  } catch (std::exception e) {
+  } catch (toml::parse_error &err) {
     std::cerr << "Error loading config.toml: " << workdir + "/config.toml"
               << "\n";
+    std::cerr << err << "\n";
     return 1;
   }
 
@@ -124,11 +126,17 @@ int main(int argc, char const *argv[]) {
   // Create world
   hittable_list world;
 
-  // Create a sphere object
-  const auto center = point3(*config["Sphere"]["center"].as_array());
-  const auto radius = config["Sphere"]["radius"].as_floating_point()->get();
-  // Add sphere to the world
-  world.add(std::make_shared<sphere>(center, radius));
+  // Create a sphere object list
+  const auto config_spheres = *config["Sphere"].as_array();
+
+  // For each spheres in the list
+  for (const auto &s : config_spheres) {
+    // Get the center and radius of the sphere
+    const auto center = point3(*(*s.as_table())["center"].as_array());
+    const auto radius = (*s.as_table())["radius"].as_floating_point()->get();
+    // Add sphere to the world
+    world.add(std::make_shared<sphere>(center, radius));
+  }
 
   // Background color
   const std::unordered_map<std::string, color> background_colors{
