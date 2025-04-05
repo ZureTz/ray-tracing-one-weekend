@@ -8,8 +8,13 @@ struct hit_record {
   point3 point;
   vec3 normal;
   double t;
+  bool front_face;
 
-  hit_record() ;
+  hit_record();
+
+  // Set front_face and normal based on the ray direction
+  // NOTE: outward_normal is assumed to be a unit vector
+  void set_face_normal(const ray &r, const vec3 &outward_normal);
 };
 
 class hittable {

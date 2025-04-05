@@ -4,11 +4,11 @@
 
 #include <toml++/toml.hpp>
 
-#include "hittables/hittable.h"
-#include "hittables/sphere.h"
-#include "utils/color.h"
-#include "utils/ray.h"
-#include "utils/vec3.h"
+#include "include/hittables/hittable.h"
+#include "include/hittables/sphere.h"
+#include "include/utils/color.h"
+#include "include/utils/ray.h"
+#include "include/utils/vec3.h"
 
 // Load config.toml using toml++ library
 const toml::table config = toml::parse_file("config.toml");
@@ -17,13 +17,12 @@ const toml::table config = toml::parse_file("config.toml");
 const auto white = color(*config["Color"]["white"].as_array());
 const auto blue = color(*config["Color"]["blue"].as_array());
 
-// Default ray color to 0,0,0
 color ray_color(const ray &r, const hittable &h) {
   // If hits draw color map
 
   // Check if the ray hits the sphere
   hit_record record;
-  if (h.hit(r, 0.0, std::numeric_limits<double>::max(), record)) {
+  if (h.hit(r, 1.0, std::numeric_limits<double>::max(), record)) {
     // Convert each component of the normal vector to a color
     // Note: The color is in the range [0, 1] and components are in the range of
     // [-1, 1], which is why we add 1 and divide by 2

@@ -1,7 +1,7 @@
 #include <algorithm>
 #include <ostream>
 
-#include "../../utils/color.h"
+#include "../../include/utils/color.h"
 
 // Write a pixel of color to the output stream
 void write_color(std::ostream &os, const color &pixel_color) {

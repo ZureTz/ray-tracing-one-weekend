@@ -1,4 +1,4 @@
-#include "../../hittables/sphere.h"
+#include "../../include/hittables/sphere.h"
 
 sphere::sphere(const point3 &center, const double radius)
     : center(center), radius(std::max(0.0, radius)) {}
@@ -50,7 +50,8 @@ bool sphere::hit(const ray &r, double t_min, double t_max,
   // Then fill the hit record
   record.t = root;
   record.point = r.at(record.t);
-  record.normal = (record.point - center) / radius;
+  const vec3 outward_normal = (record.point - center) / radius;
+  record.set_face_normal(r, outward_normal);
 
   return true;
 }
