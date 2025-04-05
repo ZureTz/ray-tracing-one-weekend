@@ -1,33 +1,33 @@
 #include <algorithm>
+#include <exception>
 #include <fstream>
 #include <iostream>
+#include <string>
+#include <unordered_map>
 
+#include <argparse/argparse.hpp>
 #include <toml++/toml.hpp>
 
 #include "include/hittables/hittable.h"
+#include "include/hittables/hittable_list.h"
 #include "include/hittables/sphere.h"
 #include "include/utils/color.h"
 #include "include/utils/ray.h"
+#include "include/utils/rtweekend.h"
 #include "include/utils/vec3.h"
 
-// Load config.toml using toml++ library
-const toml::table config = toml::parse_file("config.toml");
-
-// Colors
-const auto white = color(*config["Color"]["white"].as_array());
-const auto blue = color(*config["Color"]["blue"].as_array());
-
-color ray_color(const ray &r, const hittable &h) {
+color ray_color(
+    const ray &r, const hittable &world,
+    const std::unordered_map<std::string, color> &background_colors) {
   // If hits draw color map
 
   // Check if the ray hits the sphere
   hit_record record;
-  if (h.hit(r, 1.0, std::numeric_limits<double>::max(), record)) {
+  if (world.hit(r, 1.0, infinity, record)) {
     // Convert each component of the normal vector to a color
     // Note: The color is in the range [0, 1] and components are in the range of
     // [-1, 1], which is why we add 1 and divide by 2
-    return 0.5 * color(record.normal.x() + 1, record.normal.y() + 1,
-                       record.normal.z() + 1);
+    return 0.5 * (record.normal + color(1, 1, 1));
   }
 
   // Otherwise, draw a gradient from blue to white
@@ -38,10 +38,42 @@ color ray_color(const ray &r, const hittable &h) {
   const auto blend_ratio = 0.5 * (unit_direction.y() - (-1.0));
 
   // Blue-to-white gradient
+  const auto white = background_colors.at("white");
+  const auto blue = background_colors.at("blue");
   return (1 - blend_ratio) * white + blend_ratio * blue;
 }
 
-int main() {
+int main(int argc, char const *argv[]) {
+  // Init argparse
+  argparse::ArgumentParser program("ray-tracing-demo-cpu");
+  // Add argument "--working-directory"
+  program.add_argument("--working-directory")
+      .help("Path to the working directory")
+      .default_value(std::string("."))
+      .append();
+  // Check if the user provided a workdir
+  try {
+    program.parse_args(
+        argc, argv); // Example: ./main --color red --color green --color blue
+  } catch (const std::exception &err) {
+    std::cerr << err.what() << std::endl;
+    std::cerr << program;
+    std::exit(1);
+  }
+
+  // Get the workdir and print it
+  const auto workdir = program.get<std::string>("--working-directory");
+  std::clog << "Working directory: " << workdir << "\n";
+
+  // Load config.toml using toml++ library
+  toml::table config;
+  try {
+    config = toml::parse_file(workdir + "/config.toml");
+  } catch (std::exception e) {
+    std::cerr << "Error loading config.toml: " << workdir + "/config.toml"<< "\n";
+    std::cerr << e.what() << "\n";
+  }
+
   // Print config.toml using toml++ library
   std::clog << config << "\n\n";
 
@@ -86,16 +118,26 @@ int main() {
                                    (viewport_u / 2) - (viewport_v / 2);
   const auto pixel00_location = viewport_upper_left + 0.5 * (pixel_u + pixel_v);
 
-  // Objects
+  // Objects (World)
+
+  // Create world
+  hittable_list world;
 
   // Create a sphere object
   const auto center = point3(*config["Sphere"]["center"].as_array());
   const auto radius = config["Sphere"]["radius"].as_floating_point()->get();
-  const sphere s(center, radius);
+  // Add sphere to the world
+  world.add(std::make_shared<sphere>(center, radius));
+
+  // Background color
+  const std::unordered_map<std::string, color> background_colors{
+      {"white", color(*config["Color"]["white"].as_array())},
+      {"blue", color(*config["Color"]["blue"].as_array())},
+  };
 
   // Render
   // Open output file
-  std::ofstream output_file("output/output.ppm");
+  std::ofstream output_file(workdir + "/output/output.ppm");
 
   output_file << "P3\n" << image_width << ' ' << image_height << "\n255\n";
 
@@ -112,7 +154,7 @@ int main() {
       const auto r = ray(camera_center, ray_direction);
 
       // Find out color
-      const auto pixel_color = ray_color(r, s);
+      const auto pixel_color = ray_color(r, world, background_colors);
       // Note: Write the translated [0,255] value of each color component
       write_color(output_file, pixel_color);
     }

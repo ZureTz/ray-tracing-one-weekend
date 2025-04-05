@@ -1,0 +1,6 @@
+{
+  "xmake.runMode": "buildRun",
+  "xmake.runningTargetsArguments": {
+    "default": ["--working-directory=${workspaceFolder}"]
+  }
+}
