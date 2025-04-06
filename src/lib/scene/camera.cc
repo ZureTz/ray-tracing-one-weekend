@@ -51,11 +51,36 @@ void camera::initialize(const toml::table &config) {
                         (viewport_u / 2) - (viewport_v / 2);
   pixel00_location = viewport_upper_left + 0.5 * (pixel_u + pixel_v);
 
+  // Samples per pixel
+  samples_per_pixel = config["Camera"]["samples_per_pixel"].as_integer()->get();
+  // Scale for pixel samples (1 / samples_per_pixel)
+  pixel_samples_scale = 1.0 / double(samples_per_pixel);
+
   // Background color
   background_colors = std::unordered_map<std::string, color>{
       {"white", color(*config["Color"]["white"].as_array())},
       {"blue", color(*config["Color"]["blue"].as_array())},
   };
+}
+
+// Returns the vector to a random point in the [-.5,-.5]-[+.5,+.5] unit square
+vec3 camera::sample_square() const {
+  return vec3(random_double() - 0.5, random_double() - 0.5, 0);
+}
+
+// Construct a camera ray originating from the origin and directed at randomly
+// sampled point around the pixel location i, j
+ray camera::get_ray(int i, int j) const {
+  // Offset the pixel location by a random point in the unit square
+  const auto offset = sample_square();
+  // Calculate the ray direction for the pixel at (i,j)
+  const auto pixel_center = pixel00_location + (i + offset.x()) * pixel_u +
+                            (j + offset.y()) * pixel_v;
+  const auto ray_origin = camera_center;
+  const auto ray_direction = pixel_center - ray_origin;
+
+  // Return the ray
+  return ray(ray_origin, ray_direction);
 }
 
 void camera::render(const hittable &world, std::ofstream &output_file) const {
@@ -67,18 +92,16 @@ void camera::render(const hittable &world, std::ofstream &output_file) const {
     std::clog << "\rScanlines remaining: " << (image_height - j) << ' '
               << std::flush;
     for (int i = 0; i < image_width; i++) {
-      // Calculate the ray direction for the pixel at (i,j)
-      const auto pixel_center =
-          pixel00_location + (i * pixel_u) + (j * pixel_v);
-      const auto ray_direction = pixel_center - camera_center;
-
-      // Create a ray from the camera to the pixel
-      const auto r = ray(camera_center, ray_direction);
-
-      // Find out color
-      const auto pixel_color = ray_color(r, world);
-      // Note: Write the translated [0,255] value of each color component
-      write_color(output_file, pixel_color);
+      // Using multiple samples per pixel
+      color average_color(0, 0, 0);
+      for (int sample = 0; sample < samples_per_pixel; sample++) {
+        // Create a ray from the camera to the pixel
+        const auto r = get_ray(i, j);
+        // Add sample color to the average color
+        average_color += ray_color(r, world);
+      }
+      average_color *= pixel_samples_scale;
+      write_color(output_file, average_color);
     }
   }
 

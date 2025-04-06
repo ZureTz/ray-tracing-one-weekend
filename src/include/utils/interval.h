@@ -4,7 +4,7 @@
 // A class representing a closed interval [a, b].
 class interval {
 public:
-  double min,max;
+  double min, max;
 
   // Constructor
   interval();
@@ -16,6 +16,7 @@ public:
   // Contains and surrounds
   bool contains(double x) const;
   bool surrounds(double x) const;
+  double clamp(double x) const;
 
   // Two static special intervals
   static const interval empty, universe;

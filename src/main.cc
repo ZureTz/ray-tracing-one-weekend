@@ -58,16 +58,20 @@ int main(int argc, char const *argv[]) {
 
   // For each spheres in the list
   for (const auto &s : config_spheres) {
+    // Convert s to table
+    const auto s_table = *s.as_table();
     // Get the center and radius of the sphere
-    const auto center = point3(*(*s.as_table())["center"].as_array());
-    const auto radius = (*s.as_table())["radius"].as_floating_point()->get();
+    const auto center = point3(*s_table["center"].as_array());
+    const auto radius = s_table["radius"].as_floating_point()->get();
     // Add sphere to the world
     world.add(std::make_shared<sphere>(center, radius));
   }
 
   // Open output file
   std::ofstream output_file(workdir + "/output/output.ppm");
-  // Then render 
+  // Then render
   camera cam(config);
   cam.render(world, output_file);
+
+  return 0;
 }
