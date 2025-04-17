@@ -28,11 +28,14 @@ private:
   // Background colors
   std::unordered_map<std::string, color> background_colors;
 
+  // Max ray bounce depth
+  int max_depth;
+
   // Called by the constructor
   void initialize(const toml::table &config);
 
   // Ray color for each pixel
-  color ray_color(const ray &r, const hittable &world) const;
+  color ray_color(const ray &r, const int depth, const hittable &world) const;
 
   // Returns the vector to a random point in the [-.5,-.5]-[+.5,+.5] unit square
   vec3 sample_square() const;
@@ -47,4 +50,8 @@ public:
 
   // Render the scene
   void render(const hittable &world, std::ofstream &output_file) const;
+
+  // Multithreaded render function
+  void render_multithread(const hittable &world,
+                          std::ofstream &output_file) const;
 };

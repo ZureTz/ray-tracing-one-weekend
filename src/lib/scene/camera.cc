@@ -1,7 +1,10 @@
 #include <fstream>
 #include <iostream>
+#include <string>
+#include <thread>
 
 #include <toml++/toml.hpp>
+#include <vector>
 
 #include "../../include/scene/camera.h"
 #include "../../include/utils/rtweekend.h"
@@ -61,6 +64,9 @@ void camera::initialize(const toml::table &config) {
       {"white", color(*config["Color"]["white"].as_array())},
       {"blue", color(*config["Color"]["blue"].as_array())},
   };
+
+  // Max ray bounce depth
+  max_depth = config["Ray"]["max_depth"].as_integer()->get();
 }
 
 // Returns the vector to a random point in the [-.5,-.5]-[+.5,+.5] unit square
@@ -83,6 +89,7 @@ ray camera::get_ray(int i, int j) const {
   return ray(ray_origin, ray_direction);
 }
 
+// Single threaded render function
 void camera::render(const hittable &world, std::ofstream &output_file) const {
   // Render
 
@@ -98,7 +105,7 @@ void camera::render(const hittable &world, std::ofstream &output_file) const {
         // Create a ray from the camera to the pixel
         const auto r = get_ray(i, j);
         // Add sample color to the average color
-        average_color += ray_color(r, world);
+        average_color += ray_color(r, max_depth, world);
       }
       average_color *= pixel_samples_scale;
       write_color(output_file, average_color);
@@ -108,17 +115,107 @@ void camera::render(const hittable &world, std::ofstream &output_file) const {
   std::clog << "\rDone.                 \n";
 }
 
+// Multithreaded render function
+void camera::render_multithread(const hittable &world,
+                                std::ofstream &output_file) const {
+  // Threads
+  const int num_threads = std::thread::hardware_concurrency();
+
+  // Thread array
+  std::vector<std::thread> threads(num_threads);
+
+  // Create Buffer
+  std::vector<std::string> buffers(num_threads);
+
+  // Also Mutex for counting scanlines
+  std::mutex progress_mutex;
+
+  const int rows_per_thread = image_height / num_threads;
+
+  auto render_rows_parallel =
+      [this](const int start_row, const int end_row, const hittable &world,
+             std::string &output_buffer, std::mutex &progress_mutex,
+             int &progress) -> void {
+    // Stringstream to store the result
+    std::stringstream result;
+    for (int j = start_row; j < end_row; j++) {
+      {
+        const std::lock_guard<std::mutex> lock(progress_mutex);
+        std::clog << "\rScanlines: " << (progress + 1) << '/' << image_height
+                  << std::flush;
+        progress++;
+      }
+
+      for (int i = 0; i < image_width; i++) {
+        // Using multiple samples per pixel
+        color average_color(0, 0, 0);
+        for (int sample = 0; sample < samples_per_pixel; sample++) {
+          // Create a ray from the camera to the pixel
+          const auto r = get_ray(i, j);
+          // Add sample color to the average color
+          average_color += ray_color(r, max_depth, world);
+        }
+        average_color *= pixel_samples_scale;
+        write_color(result, average_color);
+      }
+    }
+
+    // Add the result to the output buffer
+    output_buffer += result.str();
+  };
+
+  // Render
+
+  // Start threads
+  for (int t = 0, progress = 0; t < num_threads; t++) {
+    const int start_row = t * rows_per_thread;
+    const int end_row =
+        (t == num_threads - 1) ? image_height : start_row + rows_per_thread;
+    threads[t] = std::thread(render_rows_parallel, start_row, end_row,
+                             std::ref(world), std::ref(buffers[t]),
+                             std::ref(progress_mutex), std::ref(progress));
+  }
+
+  output_file << "P3\n" << image_width << ' ' << image_height << "\n255\n";
+
+  // Wait for threads to finish
+  for (int t = 0; t < num_threads; t++) {
+    threads[t].join();
+  }
+
+  // Print the image data from the buffers
+  for (int t = 0; t < num_threads; t++) {
+    output_file << buffers[t];
+  }
+
+  std::clog << "\rDone.                 \n";
+}
+
 // Ray color for each pixel
-color camera::ray_color(const ray &r, const hittable &world) const {
+color camera::ray_color(const ray &r, const int depth,
+                        const hittable &world) const {
+  // If we've exceeded the ray bounce limit, no more light is gathered.
+  if (depth <= 0) {
+    return color(0, 0, 0);
+  }
+
   // If hits draw color map
 
   // Check if the ray hits the sphere
   hit_record record;
-  if (world.hit(r, interval(0.0, infinity), record)) {
-    // Convert each component of the normal vector to a color
-    // Note: The color is in the range [0, 1] and components are in the range of
-    // [-1, 1], which is why we add 1 and divide by 2
-    return 0.5 * (record.normal + color(1, 1, 1));
+  // Use 0.001 as the minimum distance to avoid self-intersection (Causing shadow acne)
+  if (world.hit(r, interval(0.001, infinity), record)) {
+    // Diffuse the ray
+    // Set direction to the random generated one
+
+    // Old diffuse
+    // const vec3 direction = random_in_hemisphere(record.normal);
+
+    // New diffuse
+    const vec3 direction = record.normal + random_unit_vector();
+    
+    // Recursively calculate the color of the ray, one hit sets the color to 50%
+    return 0.5 * ray_color(ray(record.point, direction), max_depth - 1, world);
   }
 
   // Otherwise, draw a gradient from blue to white

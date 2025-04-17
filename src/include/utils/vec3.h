@@ -55,6 +55,10 @@ public:
 
   // Length
   double length() const;
+
+  // Random vec3
+  static vec3 random();
+  static vec3 random(double min, double max);
 };
 
 // point3 is just an alias for vec3, but useful for geometric clarity in the
@@ -80,3 +84,9 @@ vec3 cross(const vec3 &u, const vec3 &v);
 
 // Unit vector
 vec3 unit_vector(vec3 v);
+
+// Generate random unit vector
+vec3 random_unit_vector();
+
+// Generate unit vector is in the correct hemisphere based on the normal vector
+vec3 random_in_hemisphere(const vec3 &normal);

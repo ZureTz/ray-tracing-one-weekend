@@ -1,4 +1,5 @@
 #include "../../include/utils/vec3.h"
+#include "../../include/utils/rtweekend.h"
 
 // Initializers
 vec3::vec3() : e{0, 0, 0} {}
@@ -88,6 +89,16 @@ double vec3::length_squared() const {
 // Length
 double vec3::length() const { return std::sqrt(length_squared()); }
 
+// Random vec3
+vec3 vec3::random() {
+  return vec3(random_double(), random_double(), random_double());
+}
+
+vec3 vec3::random(double min, double max) {
+  return vec3(random_double(min, max), random_double(min, max),
+              random_double(min, max));
+}
+
 // Vector Utility Functions
 
 // Output vec3
@@ -128,4 +139,34 @@ vec3 unit_vector(vec3 v) {
     throw std::runtime_error("Cannot normalize zero-length vector");
   }
   return v / v.length();
+}
+
+// Generate random unit vector
+vec3 random_unit_vector() {
+  while (true) {
+    const auto p = vec3::random(-1, 1);
+    const double squared_length = p.length_squared();
+    // If too small, try again
+    if (squared_length < 1e-160) {
+      continue;
+    }
+    // If not in a unit sphere, try again
+    if (squared_length > 1) {
+      continue;
+    }
+    // Return the unit vector
+    return p / std::sqrt(squared_length);
+  }
+}
+
+// Generate unit vector is in the correct hemisphere based on the normal vector
+vec3 random_in_hemisphere(const vec3 &normal) {
+  const vec3 on_unit_square = random_unit_vector();
+  // Dot product to check if the vector is in the same hemisphere
+  if (dot(on_unit_square, normal) > 0.0) {
+    // Positive dot product, return the vector
+    return on_unit_square;
+  }
+  // Negative dot product, return the negative vector
+  return -on_unit_square;
 }

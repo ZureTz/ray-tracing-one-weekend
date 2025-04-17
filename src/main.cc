@@ -71,7 +71,8 @@ int main(int argc, char const *argv[]) {
   std::ofstream output_file(workdir + "/output/output.ppm");
   // Then render
   camera cam(config);
-  cam.render(world, output_file);
+  // cam.render(world, output_file);
+  cam.render_multithread(world, output_file);
 
   return 0;
 }
