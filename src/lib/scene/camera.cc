@@ -60,9 +60,17 @@ void camera::initialize(const toml::table &config) {
   pixel_samples_scale = 1.0 / double(samples_per_pixel);
 
   // Background color
+  color white = color(*config["Color"]["white"].as_array());
+  color blue = color(*config["Color"]["blue"].as_array());
+
+  // Convert from gamma to linear space
+  white = color(white.x() * white.x(), white.y() * white.y(),
+                white.z() * white.z());
+  blue = color(blue.x() * blue.x(), blue.y() * blue.y(), blue.z() * blue.z());
+
   background_colors = std::unordered_map<std::string, color>{
-      {"white", color(*config["Color"]["white"].as_array())},
-      {"blue", color(*config["Color"]["blue"].as_array())},
+      {"white", white},
+      {"blue", blue},
   };
 
   // Max ray bounce depth
@@ -203,7 +211,8 @@ color camera::ray_color(const ray &r, const int depth,
 
   // Check if the ray hits the sphere
   hit_record record;
-  // Use 0.001 as the minimum distance to avoid self-intersection (Causing shadow acne)
+  // Use 0.001 as the minimum distance to avoid self-intersection (Causing
+  // shadow acne)
   if (world.hit(r, interval(0.001, infinity), record)) {
     // Diffuse the ray
     // Set direction to the random generated one
@@ -213,7 +222,7 @@ color camera::ray_color(const ray &r, const int depth,
 
     // New diffuse
     const vec3 direction = record.normal + random_unit_vector();
-    
+
     // Recursively calculate the color of the ray, one hit sets the color to 50%
     return 0.5 * ray_color(ray(record.point, direction), max_depth - 1, world);
   }
