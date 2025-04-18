@@ -59,6 +59,9 @@ public:
   // Random vec3
   static vec3 random();
   static vec3 random(double min, double max);
+
+  // Return true if the vector is close to zero in all dimensions
+  bool near_zero() const;
 };
 
 // point3 is just an alias for vec3, but useful for geometric clarity in the
@@ -90,3 +93,8 @@ vec3 random_unit_vector();
 
 // Generate unit vector is in the correct hemisphere based on the normal vector
 vec3 random_in_hemisphere(const vec3 &normal);
+
+// Reflect the vector v around the normal n
+// v: incident vector
+// n: normal vector
+vec3 reflect(const vec3 &v, const vec3 &n);

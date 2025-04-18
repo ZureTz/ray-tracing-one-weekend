@@ -7,19 +7,39 @@ image_width = 1280
 focal_length = 1.0
 viewport_height = 2.0
 camera_center = [0.0, 0.0, 0.0]
-samples_per_pixel = 100
+samples_per_pixel = 64
 
 [Color]
 white = [1.0, 1.0, 1.0]
-blue = [0.5, 0.7, 1.0]
+blue = [0.529, 0.808, 0.922]
 
 [Ray]
 max_depth = 20
 
+# Sphere on the ground
 [[Sphere]]
-center = [0.5, 0.3, -1.2]
-radius = 0.5
+material = "lambertian"
+albedo = [0.8, 0.8, 0.0]
+center = [0.0, -101.0, -2.2]
+radius = 100.0
 
+# Sphere in the center
 [[Sphere]]
-center = [-0.5, -0.3, -1.2]
-radius = 0.5
+material = "lambertian"
+albedo = [0.1, 0.2, 0.5]
+center = [0.0, 0.0, -2.6]
+radius = 1.0
+
+# Sphere in the left
+[[Sphere]]
+material = "metal"
+albedo = [0.8, 0.8, 0.8]
+center = [-2.0, 0.0, -2.2]
+radius = 1.0
+
+# Sphere in the right
+[[Sphere]]
+material = "metal"
+albedo = [0.8, 0.6, 0.2]
+center = [2.0, 0.0, -2.2]
+radius = 1.0

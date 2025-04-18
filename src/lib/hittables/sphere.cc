@@ -1,7 +1,11 @@
+#include <memory>
+
+#include "hittables/hittable.h"
 #include "hittables/sphere.h"
 
-sphere::sphere(const point3 &center, const double radius)
-    : center(center), radius(std::max(0.0, radius)) {}
+sphere::sphere(const point3 &center, const double radius,
+               std::shared_ptr<material> mat)
+    : center(center), radius(std::max(0.0, radius)), mat(mat) {}
 
 // Determine if the ray hits the sphere
 bool sphere::hit(const ray &r, interval ray_t, hit_record &record) const {
@@ -45,6 +49,7 @@ bool sphere::hit(const ray &r, interval ray_t, hit_record &record) const {
   record.point = r.at(record.t);
   const vec3 outward_normal = (record.point - center) / radius;
   record.set_face_normal(r, outward_normal);
+  record.mat = mat;
 
   return true;
 }

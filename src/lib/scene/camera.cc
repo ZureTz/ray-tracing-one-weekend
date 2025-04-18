@@ -6,6 +6,8 @@
 #include <toml++/toml.hpp>
 #include <vector>
 
+#include "hittables/hittable.h"
+#include "hittables/material.h"
 #include "scene/camera.h"
 #include "utils/rtweekend.h"
 
@@ -214,17 +216,17 @@ color camera::ray_color(const ray &r, const int depth,
   // Use 0.001 as the minimum distance to avoid self-intersection (Causing
   // shadow acne)
   if (world.hit(r, interval(0.001, infinity), record)) {
-    // Diffuse the ray
-    // Set direction to the random generated one
-
-    // Old diffuse
-    // const vec3 direction = random_in_hemisphere(record.normal);
-
-    // New diffuse
-    const vec3 direction = record.normal + random_unit_vector();
-
-    // Recursively calculate the color of the ray, one hit sets the color to 50%
-    return 0.5 * ray_color(ray(record.point, direction), max_depth - 1, world);
+    // Create scattered ray and attenuation color
+    ray scattered;
+    color attenuation;
+    // And scatter the ray based on the material
+    const material &mat = *record.mat;
+    if (mat.scatter(r, record, attenuation, scattered)) {
+      // Return the color of the scattered ray
+      return attenuation * ray_color(scattered, depth - 1, world);
+    }
+    // If the ray is absorbed, return black
+    return color(0, 0, 0);
   }
 
   // Otherwise, draw a gradient from blue to white

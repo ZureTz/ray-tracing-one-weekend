@@ -1,5 +1,5 @@
-#include "utils/rtweekend.h"
 #include "utils/vec3.h"
+#include "utils/rtweekend.h"
 
 // Initializers
 vec3::vec3() : e{0, 0, 0} {}
@@ -99,6 +99,14 @@ vec3 vec3::random(double min, double max) {
               random_double(min, max));
 }
 
+// Return true if the vector is close to zero in all dimensions
+bool vec3::near_zero() const {
+  // Note that we compare the component-wise with a small value
+  const double s = 1e-8;
+  return (std::fabs(e[0]) < s) && (std::fabs(e[1]) < s) &&
+         (std::fabs(e[2]) < s);
+}
+
 // Vector Utility Functions
 
 // Output vec3
@@ -169,4 +177,17 @@ vec3 random_in_hemisphere(const vec3 &normal) {
   }
   // Negative dot product, return the negative vector
   return -on_unit_square;
+}
+
+// Reflect the vector v around the normal n
+// v: incident vector
+// n: normal vector
+vec3 reflect(const vec3 &v, const vec3 &n) {
+  // dot(v, n): dot product of v and n (a scalar, negative)
+  // dot(v, n) * n: projection of v onto n (a vector), which points into the
+  // surface
+  // -2 * dot(v, n) * n: twice the projection of v onto n (a vector), which
+  // points out of the surface
+  // v - 2 * dot(v, n) * n: the reflection of v around n
+  return v - 2 * dot(v, n) * n;
 }
