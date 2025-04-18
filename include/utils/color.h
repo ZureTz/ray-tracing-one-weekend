@@ -2,7 +2,7 @@
 
 #include <ostream>
 
-#include "vec3.h"
+#include "utils/vec3.h"
 
 // Color type alias
 using color = vec3;

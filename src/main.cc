@@ -7,10 +7,10 @@
 #include <argparse/argparse.hpp>
 #include <toml++/toml.hpp>
 
-#include "include/hittables/hittable_list.h"
-#include "include/hittables/sphere.h"
-#include "include/scene/camera.h"
-#include "include/utils/vec3.h"
+#include "hittables/hittable_list.h"
+#include "hittables/sphere.h"
+#include "scene/camera.h"
+#include "utils/vec3.h"
 
 int main(int argc, char const *argv[]) {
   // Init argparse

@@ -1,6 +1,6 @@
 #include <cstdlib>
 
-#include "../../include/utils/rtweekend.h"
+#include "utils/rtweekend.h"
 
 // Utility Functions implementations
 

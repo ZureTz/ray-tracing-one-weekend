@@ -5,8 +5,8 @@
 #include <toml++/toml.hpp>
 #include <unordered_map>
 
-#include "../hittables/hittable.h"
-#include "../utils/color.h"
+#include "hittables/hittable.h"
+#include "utils/color.h"
 
 class camera {
 private:

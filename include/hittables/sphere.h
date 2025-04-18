@@ -1,7 +1,7 @@
 #pragma once
 // Sphere class derived from hittable
 
-#include "hittable.h"
+#include "hittables/hittable.h"
 
 class sphere : public hittable {
   point3 center;

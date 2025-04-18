@@ -1,5 +1,5 @@
-#include "../../include/utils/interval.h"
-#include "../../include/utils/rtweekend.h"
+#include "utils/interval.h"
+#include "utils/rtweekend.h"
 
 // Default empty interval
 interval::interval() : min(+infinity), max(-infinity) {}

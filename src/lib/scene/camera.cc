@@ -6,8 +6,8 @@
 #include <toml++/toml.hpp>
 #include <vector>
 
-#include "../../include/scene/camera.h"
-#include "../../include/utils/rtweekend.h"
+#include "scene/camera.h"
+#include "utils/rtweekend.h"
 
 // Constructor
 camera::camera(const toml::table &config) {

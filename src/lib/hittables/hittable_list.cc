@@ -1,6 +1,6 @@
 #include <memory>
 
-#include "../../include/hittables/hittable_list.h"
+#include "hittables/hittable_list.h"
 
 hittable_list::hittable_list(std::shared_ptr<hittable> object) { add(object); }
 

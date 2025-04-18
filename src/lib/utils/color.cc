@@ -1,7 +1,7 @@
 #include <ostream>
 
-#include "../../include/utils/color.h"
-#include "../../include/utils/interval.h"
+#include "utils/color.h"
+#include "utils/interval.h"
 
 // Write a pixel of color to the output stream
 void write_color(std::ostream &os, const color &pixel_color) {

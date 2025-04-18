@@ -1,5 +1,5 @@
-#include "../../include/hittables/hittable.h"
-#include "../../include/utils/vec3.h"
+#include "hittables/hittable.h"
+#include "utils/vec3.h"
 
 hit_record::hit_record() : point(), normal(), t(0) {}
 // Set front_face and normal based on the ray direction

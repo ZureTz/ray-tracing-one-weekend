@@ -1,4 +1,4 @@
-#include "../../include/utils/ray.h"
+#include "utils/ray.h"
 
 // Constructors
 ray::ray() {}

@@ -1,9 +1,9 @@
 #pragma once
 // Hittable objects are objects that can be hit by rays
 
-#include "../utils/interval.h"
-#include "../utils/ray.h"
-#include "../utils/vec3.h"
+#include "utils/interval.h"
+#include "utils/ray.h"
+#include "utils/vec3.h"
 
 struct hit_record {
   point3 point;
