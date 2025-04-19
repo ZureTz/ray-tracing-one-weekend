@@ -23,8 +23,6 @@ struct hit_record {
   void set_face_normal(const ray &r, const vec3 &outward_normal);
 };
 
-
-
 class hittable {
 public:
   virtual bool hit(const ray &r, interval ray_t, hit_record &record) const = 0;
