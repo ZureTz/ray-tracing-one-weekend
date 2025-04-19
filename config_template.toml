@@ -33,6 +33,7 @@ radius = 1.0
 # Sphere in the left
 [[Sphere]]
 material = "metal"
+fuzz = 0.3
 albedo = [0.8, 0.8, 0.8]
 center = [-2.0, 0.0, -2.2]
 radius = 1.0
@@ -40,6 +41,7 @@ radius = 1.0
 # Sphere in the right
 [[Sphere]]
 material = "metal"
+fuzz = 1.0
 albedo = [0.8, 0.6, 0.2]
 center = [2.0, 0.0, -2.2]
 radius = 1.0
