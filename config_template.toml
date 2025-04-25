@@ -4,9 +4,10 @@ aspect_ratio_height = 9.0
 image_width = 1280
 
 [Camera]
-focal_length = 1.0
-viewport_height = 2.0
-camera_center = [0.0, 0.0, 0.0]
+v_fov = 90.0
+look_from = [-2.0, 2.0, 1.0]
+look_at = [0.0, 0.0, -1.0]
+vup = [0.0, 1.0, 0.0]
 samples_per_pixel = 64
 
 [Color]

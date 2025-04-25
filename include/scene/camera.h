@@ -11,16 +11,11 @@
 class camera {
 private:
   // Camera parameters
-  double aspect_ratio;                    // Aspect ratio of the image
-  int image_width, image_height;          // Rendered image width and height
-  double focal_length;                    // Focal length of the camera
-  double viewport_width, viewport_height; // Viewport dimensions
-
-  point3 camera_center;        // Camera position in 3D space
-  vec3 viewport_u, viewport_v; // Viewport vectors
-  vec3 pixel_u, pixel_v;       // Pixel vectors
-  vec3 viewport_upper_left;    // Upper left corner of the viewport
-  vec3 pixel00_location;       // Location of the first pixel
+  int image_width, image_height; // Rendered image width and height
+  point3 camera_center;          // Camera position in 3D space
+  vec3 u, v, w;                  // Camera frame basis vectors
+  vec3 pixel_u, pixel_v;         // Pixel vectors
+  vec3 pixel00_location;         // Location of the first pixel
 
   int samples_per_pixel;      // Sample per pixel for anti-aliasing
   double pixel_samples_scale; // Scale for pixel samples (1 / samples_per_pixel)

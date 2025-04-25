@@ -1,83 +1,228 @@
+#include <cstdlib>
 #include <fstream>
 #include <iostream>
 #include <mutex>
 #include <string>
 #include <thread>
+#include <vector>
 
 #include <toml++/toml.hpp>
-#include <vector>
 
 #include "hittables/hittable.h"
 #include "hittables/material.h"
 #include "scene/camera.h"
 #include "utils/rtweekend.h"
+#include "utils/vec3.h"
 
 // Constructor
 camera::camera(const toml::table &config) {
-  // Initialize camera parameters
-  initialize(config);
+  try {
+    // Initialize camera parameters
+    initialize(config);
+  } catch (const std::exception &e) {
+    std::cerr << "相机初始化失败: " << e.what() << "\n";
+    exit(EXIT_FAILURE);
+  }
 }
 
 void camera::initialize(const toml::table &config) {
-  // Image
+  try {
+    // 检查所需配置项是否存在
+    if (!config.contains("Image") || !config["Image"].is_table() ||
+        !config.contains("Camera") || !config["Camera"].is_table() ||
+        !config.contains("Color") || !config["Color"].is_table() ||
+        !config.contains("Ray") || !config["Ray"].is_table()) {
+      throw std::runtime_error(
+          "缺少必要的配置部分: Image, Camera, Color 或 Ray");
+    }
 
-  const auto aspect_ratio_width =
-      config["Image"]["aspect_ratio_width"].as_floating_point()->get();
-  const auto aspect_ratio_height =
-      config["Image"]["aspect_ratio_height"].as_floating_point()->get();
-  aspect_ratio = aspect_ratio_width / aspect_ratio_height;
+    // Image 部分验证
+    if (!config["Image"].as_table()->contains("aspect_ratio_width") ||
+        !config["Image"].as_table()->contains("aspect_ratio_height") ||
+        !config["Image"].as_table()->contains("image_width")) {
+      throw std::runtime_error("缺少 Image 部分的必要配置项");
+    }
 
-  image_width = config["Image"]["image_width"].as_integer()->get();
-  // Ensure that image_height is at least 1 to avoid division by zero
-  image_height = std::max(int(image_width / aspect_ratio), 1);
+    // 获取并验证宽高比
+    const auto aspect_ratio_width =
+        config["Image"]["aspect_ratio_width"].as_floating_point();
+    const auto aspect_ratio_height =
+        config["Image"]["aspect_ratio_height"].as_floating_point();
 
-  // Camera
+    if (!aspect_ratio_width || !aspect_ratio_height) {
+      throw std::runtime_error("宽高比必须是浮点数");
+    }
 
-  // Focal length is the distance from the camera to the viewport
-  focal_length = config["Camera"]["focal_length"].as_floating_point()->get();
-  viewport_height =
-      config["Camera"]["viewport_height"].as_floating_point()->get();
+    double width_val = aspect_ratio_width->get();
+    double height_val = aspect_ratio_height->get();
 
-  // Use image width / image height instead of aspect_ratio to match the image
-  // Aspect ratio does not always match the viewport aspect ratio
-  viewport_width = viewport_height * double(image_width) / double(image_height);
-  camera_center = point3(*config["Camera"]["camera_center"].as_array());
+    if (width_val <= 0 || height_val <= 0) {
+      throw std::runtime_error("宽高比必须为正数");
+    }
 
-  // Calculate the vectors across the horizontal and down the vertical viewport
-  // edges.
-  viewport_u = vec3(viewport_width, 0, 0);
-  viewport_v = vec3(0, -viewport_height, 0);
+    const double aspect_ratio = width_val / height_val;
 
-  // Calculate the horizontal and vertical delta vectors from pixel to pixel
-  pixel_u = viewport_u / double(image_width);
-  pixel_v = viewport_v / double(image_height);
+    // 获取并验证图像宽度
+    const auto width_node = config["Image"]["image_width"].as_integer();
+    if (!width_node) {
+      throw std::runtime_error("图像宽度必须是整数");
+    }
 
-  // Calculate the location of the upper left pixel
-  viewport_upper_left = camera_center - vec3(0, 0, focal_length) -
-                        (viewport_u / 2) - (viewport_v / 2);
-  pixel00_location = viewport_upper_left + 0.5 * (pixel_u + pixel_v);
+    image_width = width_node->get();
+    if (image_width <= 0) {
+      throw std::runtime_error("图像宽度必须为正整数");
+    }
 
-  // Samples per pixel
-  samples_per_pixel = config["Camera"]["samples_per_pixel"].as_integer()->get();
-  // Scale for pixel samples (1 / samples_per_pixel)
-  pixel_samples_scale = 1.0 / double(samples_per_pixel);
+    // Ensure that image_height is at least 1 to avoid division by zero
+    image_height = std::max(int(image_width / aspect_ratio), 1);
 
-  // Background color
-  color white = color(*config["Color"]["white"].as_array());
-  color blue = color(*config["Color"]["blue"].as_array());
+    // Camera 部分验证
+    if (!config["Camera"].as_table()->contains("v_fov") ||
+        !config["Camera"].as_table()->contains("look_from") ||
+        !config["Camera"].as_table()->contains("look_at") ||
+        !config["Camera"].as_table()->contains("vup") ||
+        !config["Camera"].as_table()->contains("samples_per_pixel")) {
+      throw std::runtime_error("缺少 Camera 部分的必要配置项");
+    }
 
-  // Convert from gamma to linear space
-  white = color(white.x() * white.x(), white.y() * white.y(),
-                white.z() * white.z());
-  blue = color(blue.x() * blue.x(), blue.y() * blue.y(), blue.z() * blue.z());
+    // Get v_fov node and validate it
+    const auto v_fov_node = config["Camera"]["v_fov"].as_floating_point();
+    if (!v_fov_node) {
+      throw std::runtime_error("v_fov必须是浮点数");
+    }
 
-  background_colors = std::unordered_map<std::string, color>{
-      {"white", white},
-      {"blue", blue},
-  };
+    const auto v_fov = v_fov_node->get();
+    if (v_fov <= 0 || v_fov >= 180) {
+      throw std::runtime_error("v_fov必须在0到180之间");
+    }
 
-  // Max ray bounce depth
-  max_depth = config["Ray"]["max_depth"].as_integer()->get();
+    // 获取并验证look_from
+    const auto look_from_node = config["Camera"]["look_from"].as_array();
+    if (!look_from_node || look_from_node->size() != 3) {
+      throw std::runtime_error("look_from必须是包含3个元素的数组");
+    }
+
+    const vec3 look_from(*look_from_node);
+    camera_center = look_from;
+
+    // 获取并验证look_at
+    const auto look_at_node = config["Camera"]["look_at"].as_array();
+    if (!look_at_node || look_at_node->size() != 3) {
+      throw std::runtime_error("look_at必须是包含3个元素的数组");
+    }
+    const vec3 look_at(*look_at_node);
+
+    // 获取并验证vup
+    const auto vup_node = config["Camera"]["vup"].as_array();
+    if (!vup_node || vup_node->size() != 3) {
+      throw std::runtime_error("vup必须是包含3个元素的数组");
+    }
+    const vec3 vup(*vup_node);
+
+    // Calculate the focal length
+    const auto focal_length = (look_from - look_at).length();
+    // Calculate the viewport height based on the vertical field of view
+    // Convert degrees to radians
+    const double theta = degrees_to_radians(v_fov);
+    // Calculate the half height of the viewport
+    const double half_height = std::tan(theta / 2);
+    // Calculate the viewport height
+    const double viewport_height = 2.0 * half_height * focal_length;
+
+    // Use image width / image height instead of aspect_ratio to match the image
+    // Aspect ratio does not always match the viewport aspect ratio
+    const double viewport_width =
+        viewport_height * double(image_width) / double(image_height);
+
+    // Calculate the u, v, w unit basis vectors for the camera coordinate frame
+    w = unit_vector(look_from - look_at);
+    u = unit_vector(cross(vup, w));
+    v = cross(w, u);
+
+    // Calculate the vectors across the horizontal and down the vertical
+    // viewport edges.
+    const auto viewport_u = viewport_width * u;
+    const auto viewport_v = viewport_height * -v;
+
+    // Calculate the horizontal and vertical delta vectors from pixel to pixel
+    pixel_u = viewport_u / double(image_width);
+    pixel_v = viewport_v / double(image_height);
+
+    // Calculate the location of the upper left pixel
+    const auto viewport_upper_left = camera_center - (focal_length * w) -
+                                     (0.5 * viewport_u) - (0.5 * viewport_v);
+    pixel00_location = viewport_upper_left + 0.5 * (pixel_u + pixel_v);
+
+    // 获取并验证采样数
+    const auto samples_node =
+        config["Camera"]["samples_per_pixel"].as_integer();
+    if (!samples_node) {
+      throw std::runtime_error("每像素采样数必须是整数");
+    }
+
+    samples_per_pixel = samples_node->get();
+    if (samples_per_pixel <= 0) {
+      throw std::runtime_error("每像素采样数必须为正整数");
+    }
+
+    // Scale for pixel samples (1 / samples_per_pixel)
+    pixel_samples_scale = 1.0 / double(samples_per_pixel);
+
+    // Color 部分验证
+    if (!config["Color"].as_table()->contains("white") ||
+        !config["Color"].as_table()->contains("blue")) {
+      throw std::runtime_error("缺少 Color 部分的必要配置项");
+    }
+
+    // 获取并验证背景颜色
+    const auto white_node = config["Color"]["white"].as_array();
+    const auto blue_node = config["Color"]["blue"].as_array();
+
+    if (!white_node || white_node->size() != 3 || !blue_node ||
+        blue_node->size() != 3) {
+      throw std::runtime_error("颜色必须是包含3个元素的数组");
+    }
+
+    color white = color(*white_node);
+    color blue = color(*blue_node);
+
+    // 验证颜色值是否在有效范围内 [0,1]
+    if (white.x() < 0 || white.x() > 1 || white.y() < 0 || white.y() > 1 ||
+        white.z() < 0 || white.z() > 1 || blue.x() < 0 || blue.x() > 1 ||
+        blue.y() < 0 || blue.y() > 1 || blue.z() < 0 || blue.z() > 1) {
+      throw std::runtime_error("颜色值必须在范围 [0,1] 内");
+    }
+
+    // Convert from gamma to linear space
+    white = color(white.x() * white.x(), white.y() * white.y(),
+                  white.z() * white.z());
+    blue = color(blue.x() * blue.x(), blue.y() * blue.y(), blue.z() * blue.z());
+
+    background_colors = std::unordered_map<std::string, color>{
+        {"white", white},
+        {"blue", blue},
+    };
+
+    // Ray 部分验证
+    if (!config["Ray"].as_table()->contains("max_depth")) {
+      throw std::runtime_error("缺少 Ray 部分的必要配置项");
+    }
+
+    // 获取并验证最大光线深度
+    const auto max_depth_node = config["Ray"]["max_depth"].as_integer();
+    if (!max_depth_node) {
+      throw std::runtime_error("最大光线深度必须是整数");
+    }
+
+    max_depth = max_depth_node->get();
+    if (max_depth <= 0) {
+      throw std::runtime_error("最大光线深度必须为正整数");
+    }
+  } catch (const toml::parse_error &e) {
+    throw std::runtime_error("TOML解析错误: " + std::string(e.what()));
+  } catch (const std::exception &e) {
+    throw std::runtime_error("配置验证错误: " + std::string(e.what()));
+  }
 }
 
 // Returns the vector to a random point in the [-.5,-.5]-[+.5,+.5] unit square
