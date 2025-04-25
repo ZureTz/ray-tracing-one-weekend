@@ -61,18 +61,26 @@ int main(int argc, char const *argv[]) {
 
   // Create material alias (from string to material class)
   auto config_to_material =
-      [](const toml::table conf) -> std::shared_ptr<material> {
+      [](const toml::table conf_object) -> std::shared_ptr<material> {
     // Get the material type and albedo
-    const auto material_type = conf["material"].as_string()->get();
-    const auto albedo = color(*conf["albedo"].as_array());
+    const auto material_type = conf_object["material"].as_string()->get();
+    const auto albedo = color(*conf_object["albedo"].as_array());
 
     if (material_type == "lambertian") {
       return std::make_shared<lambertian>(albedo);
     }
     if (material_type == "metal") {
-      const double fuzz =
-          conf.contains("fuzz") ? conf["fuzz"].as_floating_point()->get() : 0.0;
+      const double fuzz = conf_object.contains("fuzz")
+                              ? conf_object["fuzz"].as_floating_point()->get()
+                              : 0.0;
       return std::make_shared<metal>(albedo, fuzz);
+    }
+    if (material_type == "dielectric") {
+      const double refractive_index =
+          conf_object.contains("refractive_index")
+              ? conf_object["refractive_index"].as_floating_point()->get()
+              : 1.0;
+      return std::make_shared<dielectric>(refractive_index);
     }
     // Invalid type
     return nullptr;

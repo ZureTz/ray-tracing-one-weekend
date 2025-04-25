@@ -38,3 +38,21 @@ public:
   bool scatter(const ray &r_in, const hit_record &rec, color &attenuation,
                ray &scattered) const override;
 };
+
+// Dielectric material
+class dielectric : public material {
+  // Refractive index in vacuum or air, or the ratio of the material's
+  // refractive index over the refractive index of the enclosing media
+  double refractive_index;
+
+  // Schlick approximation for reflectance
+  static double reflectance(double cosine, double refraction_index);
+
+public:
+  // Constructor, using refractive index
+  dielectric(double refractive_index);
+
+  // Scatter function
+  bool scatter(const ray &r_in, const hit_record &rec, color &attenuation,
+               ray &scattered) const override;
+};
