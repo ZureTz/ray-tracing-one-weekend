@@ -4,8 +4,10 @@
     "default": ["--working-directory=${workspaceFolder}"]
   },
   "cSpell.words": [
+    "argparse",
     "etai",
     "etat",
+    "includedirs",
     "Schlick"
   ]
 }
